@@ -40,6 +40,14 @@ impl Choice {
             _ => panic!("Unknwon choice {}!", identifier),
         }
     }
+
+    fn score_value(&self) -> i32 {
+        match self {
+            Choice::Rock => 1,
+            Choice::Paper => 2,
+            Choice::Scissor => 3,
+        }
+    }
 }
 
 impl Display for Choice {
@@ -58,13 +66,13 @@ struct Round {
 }
 
 impl Round {
-    fn parse_by_outcome(opponent: &str, outcome: &str) -> Self {
-        let opponent = Choice::parse(opponent);
-        let player = match outcome {
+    fn parse_by_outcome(row: &(String, String)) -> Self {
+        let opponent = Choice::parse(row.0.as_str());
+        let player = match row.1.as_str() {
                 "X" => opponent.wins_against(),
                 "Y" => opponent.draws_against(),
                 "Z" => opponent.looses_against(),
-                _ => panic!("Unknown outcome {}!", outcome),
+                _ => panic!("Unknown outcome {}!", row.1.as_str()),
         };
         Self {
             opponent,
@@ -72,28 +80,26 @@ impl Round {
         }
     }
 
-    fn parse_by_player_choice(opponent: &str, player: &str) -> Self {
+    fn parse_by_player_choice(row: &(String, String)) -> Self {
         Self {
-            player: Choice::parse(player),
-            opponent: Choice::parse(opponent),
+            opponent: Choice::parse(row.0.as_str()),
+            player: Choice::parse(row.1.as_str()),
         }
     }
 
-    fn score(&self) -> u16 {
-        let choice = match self.player {
-            Choice::Rock => 1,
-            Choice::Paper => 2,
-            Choice::Scissor => 3,
-        };
-
-        let mut outcome: u16 = 3;
+    fn score(&self) -> i32 {
+        let mut outcome: i32 = 3;
         if self.player.looses_against() == self.opponent {
             outcome = 0;
         } else if self.player.wins_against() == self.opponent {
             outcome = 6;
         }
 
-        choice + outcome
+        outcome + self.player.score_value()
+    }
+
+    fn sum(rounds: Vec<Round>) -> i32 {
+        rounds.iter().map(Round::score).sum::<i32>()
     }
 }
 
@@ -104,40 +110,25 @@ impl Display for Round {
 }
 
 fn main() {
-    let input = load_file();
-    let sum1 = parse1(&input).iter().map(Round::score).sum::<u16>();
-    println!("Total of #1: {}", sum1);
+    let rows = load_and_parse_file();
+    let rounds1: Vec<Round> = rows.iter().map(Round::parse_by_player_choice).collect();
+    let rounds2: Vec<Round> = rows.iter().map(Round::parse_by_outcome).collect();
 
-    let sum2 = parse2(&input).iter().map(Round::score).sum::<u16>();
-    println!("Total of #2: {}", sum2);
+    println!("Total of #1: {}", Round::sum(rounds1));
+    println!("Total of #2: {}", Round::sum(rounds2));
 }
 
-fn parse1(input: &String) -> Vec<Round> {
-    let mut rounds: Vec<Round> = Vec::new();
-    for play in input.split("\n") {
-        if play.len() > 0 {
-            let mut iter = play.split(" ");
-            let opponent = iter.next().unwrap();
-            let player = iter.next().unwrap();
-            rounds.push(Round::parse_by_player_choice(opponent, player));
+fn load_and_parse_file() -> Vec<(String, String)> {
+    let mut result: Vec<(String, String)> = Vec::new();
+    let file = std::fs::read_to_string("input").unwrap();
+    for line in file.split("\n") {
+        if line.len() > 0 {
+            let mut iter = line.split(" ");
+            let a = String::from(iter.next().unwrap());
+            let b = String::from(iter.next().unwrap());
+            result.push((a, b))
         }
     }
 
-    return rounds;
+    return result;
 }
-
-fn parse2(input: &String) -> Vec<Round> {
-    let mut rounds: Vec<Round> = Vec::new();
-    for play in input.split("\n") {
-        if play.len() > 0 {
-            let mut iter = play.split(" ");
-            let opponent = iter.next().unwrap();
-            let outcome = iter.next().unwrap();
-            rounds.push(Round::parse_by_outcome(opponent, outcome));
-        }
-    }
-
-    return rounds;
-}
-
-fn load_file() -> String { std::fs::read_to_string("input").unwrap() }

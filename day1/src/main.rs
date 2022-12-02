@@ -10,13 +10,9 @@ fn main() {
         }
         elves.push(total_calories)
     }
-    // let comma_sep: Vec<String> = elves.iter().map(String::from).collect();
     elves.sort_unstable();
     elves.reverse();
-    do_print(elves);
-}
 
-fn do_print<T: ToString>(collection: Vec<T>) {
-    let strs = collection.iter().map(|e| e.to_string()).collect::<Vec<String>>().join(", ");
-    println!("{}", strs);
+    println!("#1: {}", elves[0]);
+    println!("#2: {}", elves[0] + elves[1] + elves[2]);
 }

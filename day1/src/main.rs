@@ -14,5 +14,5 @@ fn main() {
     elves.reverse();
 
     println!("#1: {}", elves[0]);
-    println!("#2: {}", elves[0] + elves[1] + elves[2]);
+    println!("#2: {}", elves[0..3].iter().sum::<u64>());
 }

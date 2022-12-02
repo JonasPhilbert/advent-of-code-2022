@@ -67,12 +67,12 @@ struct Round {
 
 impl Round {
     fn parse_by_outcome(row: &(String, String)) -> Self {
-        let opponent = Choice::parse(row.0.as_str());
+        let opponent = Choice::parse(&row.0);
         let player = match row.1.as_str() {
                 "X" => opponent.wins_against(),
                 "Y" => opponent.draws_against(),
                 "Z" => opponent.looses_against(),
-                _ => panic!("Unknown outcome {}!", row.1.as_str()),
+                _ => panic!("Unknown outcome {}!", row.1),
         };
         Self {
             opponent,
@@ -82,8 +82,8 @@ impl Round {
 
     fn parse_by_player_choice(row: &(String, String)) -> Self {
         Self {
-            opponent: Choice::parse(row.0.as_str()),
-            player: Choice::parse(row.1.as_str()),
+            opponent: Choice::parse(&row.0),
+            player: Choice::parse(&row.1),
         }
     }
 
@@ -109,6 +109,21 @@ impl Display for Round {
     }
 }
 
+fn load_and_parse_file() -> Vec<(String, String)> {
+    let mut result = Vec::new();
+    let file = std::fs::read_to_string("input").unwrap();
+    for line in file.split("\n") {
+        if line.len() > 0 {
+            let mut iter = line.split(" ");
+            let a = iter.next().unwrap().to_string();
+            let b = iter.next().unwrap().to_string();
+            result.push((a, b))
+        }
+    }
+
+    return result;
+}
+
 fn main() {
     let rows = load_and_parse_file();
     let rounds1: Vec<Round> = rows.iter().map(Round::parse_by_player_choice).collect();
@@ -116,19 +131,4 @@ fn main() {
 
     println!("Total of #1: {}", Round::sum(rounds1));
     println!("Total of #2: {}", Round::sum(rounds2));
-}
-
-fn load_and_parse_file() -> Vec<(String, String)> {
-    let mut result: Vec<(String, String)> = Vec::new();
-    let file = std::fs::read_to_string("input").unwrap();
-    for line in file.split("\n") {
-        if line.len() > 0 {
-            let mut iter = line.split(" ");
-            let a = String::from(iter.next().unwrap());
-            let b = String::from(iter.next().unwrap());
-            result.push((a, b))
-        }
-    }
-
-    return result;
 }

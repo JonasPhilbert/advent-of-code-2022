@@ -1,9 +1,45 @@
 use std::fmt::Display;
 
+#[derive(PartialEq)]
 enum Choice {
     Rock,
     Paper,
     Scissor,
+}
+
+impl Choice {
+    fn wins_against(&self) -> Self {
+        match self {
+            Choice::Rock => Choice::Scissor,
+            Choice::Paper => Choice::Rock,
+            Choice::Scissor => Choice::Paper,
+        }
+    }
+
+    fn draws_against(&self) -> Self { 
+        match self {
+            Choice::Rock => Choice::Rock,
+            Choice::Paper => Choice::Paper,
+            Choice::Scissor => Choice::Scissor,
+        }
+    }
+
+    fn looses_against(&self) -> Self {
+        match self {
+            Choice::Rock => Choice::Paper,
+            Choice::Paper => Choice::Scissor,
+            Choice::Scissor => Self::Rock,
+        }
+    }
+
+    fn parse(identifier: &str) -> Self {
+        match identifier {
+            "A" | "X" => Self::Rock,
+            "B" | "Y" => Self::Paper,
+            "C" | "Z" => Self::Scissor,
+            _ => panic!("Unknwon choice {}!", identifier),
+        }
+    }
 }
 
 impl Display for Choice {
@@ -22,20 +58,24 @@ struct Round {
 }
 
 impl Round {
-    fn parse(player: &str, opponent: &str) -> Self {
+    fn parse_by_outcome(opponent: &str, outcome: &str) -> Self {
+        let opponent = Choice::parse(opponent);
+        let player = match outcome {
+                "X" => opponent.wins_against(),
+                "Y" => opponent.draws_against(),
+                "Z" => opponent.looses_against(),
+                _ => panic!("Unknown outcome {}!", outcome),
+        };
         Self {
-            player: match player {
-                "X" => Choice::Rock,
-                "Y" => Choice::Paper,
-                "Z" => Choice::Scissor,
-                _ => panic!("Unknown player choice {}!", player),
-            },
-            opponent: match opponent {
-                "A" => Choice::Rock,
-                "B" => Choice::Paper,
-                "C" => Choice::Scissor,
-                _ => panic!("Known opponent choice {}!", opponent),
-            }
+            opponent,
+            player,
+        }
+    }
+
+    fn parse_by_player_choice(opponent: &str, player: &str) -> Self {
+        Self {
+            player: Choice::parse(player),
+            opponent: Choice::parse(opponent),
         }
     }
 
@@ -46,23 +86,12 @@ impl Round {
             Choice::Scissor => 3,
         };
 
-        let outcome = match self.player {
-            Choice::Rock => match self.opponent {
-                Choice::Rock => 3,
-                Choice::Paper => 0,
-                Choice::Scissor => 6,
-            },
-            Choice::Paper => match self.opponent {
-                Choice::Rock => 6,
-                Choice::Paper => 3,
-                Choice::Scissor => 0,
-            }
-            Choice::Scissor => match self.opponent {
-                Choice::Rock => 0,
-                Choice::Paper => 6,
-                Choice::Scissor => 3,
-            }
-        };
+        let mut outcome: u16 = 3;
+        if self.player.looses_against() == self.opponent {
+            outcome = 0;
+        } else if self.player.wins_against() == self.opponent {
+            outcome = 6;
+        }
 
         choice + outcome
     }
@@ -75,25 +104,40 @@ impl Display for Round {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("input").unwrap();
+    let input = load_file();
+    let sum1 = parse1(&input).iter().map(Round::score).sum::<u16>();
+    println!("Total of #1: {}", sum1);
+
+    let sum2 = parse2(&input).iter().map(Round::score).sum::<u16>();
+    println!("Total of #2: {}", sum2);
+}
+
+fn parse1(input: &String) -> Vec<Round> {
     let mut rounds: Vec<Round> = Vec::new();
     for play in input.split("\n") {
         if play.len() > 0 {
             let mut iter = play.split(" ");
             let opponent = iter.next().unwrap();
             let player = iter.next().unwrap();
-            rounds.push(Round::parse(player, opponent));
-            // println!("{} vs {}", opponent, player);
+            rounds.push(Round::parse_by_player_choice(opponent, player));
         }
     }
 
-    for round in rounds.iter() {
-        println!("{}", round);
+    return rounds;
+}
+
+fn parse2(input: &String) -> Vec<Round> {
+    let mut rounds: Vec<Round> = Vec::new();
+    for play in input.split("\n") {
+        if play.len() > 0 {
+            let mut iter = play.split(" ");
+            let opponent = iter.next().unwrap();
+            let outcome = iter.next().unwrap();
+            rounds.push(Round::parse_by_outcome(opponent, outcome));
+        }
     }
 
-    println!();
-
-    let sum = rounds.iter().map(Round::score).sum::<u16>();
-
-    println!("Total: {}", sum);
+    return rounds;
 }
+
+fn load_file() -> String { std::fs::read_to_string("input").unwrap() }

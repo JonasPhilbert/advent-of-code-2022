@@ -7,6 +7,10 @@ impl Elf {
     fn contains(&self, other: &Elf) -> bool {
         self.from <= other.from && self.to >= other.to
     }
+
+    fn overlaps(&self, other: &Elf) -> bool {
+        self.from <= other.to && self.to >= other.from
+    }
 }
 
 struct Pair {
@@ -18,14 +22,17 @@ impl Pair {
     fn has_full_containment(&self) -> bool {
         self.elf_a.contains(&self.elf_b) || self.elf_b.contains(&self.elf_a)
     }
+
+    fn overlaps(&self) -> bool {
+        self.elf_a.overlaps(&self.elf_b)
+    }
 }
 
 fn main() {
-    let overlap_group_count = std::fs::read_to_string("input").unwrap()
+    let pairs: Vec<Pair> = std::fs::read_to_string("input").unwrap()
         .split("\n")
         .filter(|row| row.len() > 0)
         .map(|row| {
-            println!("{}", row);
             let mut elves = row.split(",").into_iter().map(|elf| {
                 let mut ranges = elf.split("-").map(|num| num.parse::<u32>().unwrap());
                 Elf {
@@ -37,6 +44,10 @@ fn main() {
                 elf_a: elves.next().unwrap(),
                 elf_b: elves.next().unwrap(),
             }
-        }).filter(|pair| pair.has_full_containment()).count();
-    println!("#1: {}", overlap_group_count);
+        }).collect();
+
+    let contains_count = pairs.iter().filter(|pair| pair.has_full_containment()).count();
+    println!("#1: {}", contains_count);
+    let overlaps_count = pairs.iter().filter(|pair| pair.overlaps()).count();
+    println!("#2: {}", overlaps_count);
 }
